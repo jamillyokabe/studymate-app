@@ -3,6 +3,10 @@ services:
   oracle:
     image: gvenzl/oracle-xe:21-slim
     restart: unless-stopped
+
+    cpus: "1.0"
+    mem_limit: 3g
+
     environment:
       ORACLE_PASSWORD: ${ORACLE_PASSWORD:?Defina ORACLE_PASSWORD}
       APP_USER: ${DB_USER:?Defina DB_USER}
