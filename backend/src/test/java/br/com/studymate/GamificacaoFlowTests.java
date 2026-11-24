@@ -75,7 +75,7 @@ class GamificacaoFlowTests {
     void preparar() {
         clock.set("2026-10-10T15:00:00Z");
         for (String tabela : List.of("sync_request", "email_verification", "tarefa", "avaliacao", "falta",
-                "disciplina", "periodo_letivo", "progresso_estudante", "usuario")) {
+                "disciplina", "periodo_letivo", "usuario")) {
             jdbc.update("DELETE FROM " + tabela);
         }
         usuario = usuario("gamificacao-ana@example.com");

@@ -18,11 +18,15 @@ import org.springframework.web.context.WebApplicationContext;
 import org.mockito.ArgumentCaptor;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import java.util.List;
 
 @SpringBootTest
 @org.springframework.context.annotation.Import(SecurityTestMailConfig.class)
@@ -31,6 +35,7 @@ class UsuarioFlowTests {
  @Autowired WebApplicationContext context;
  @Autowired UsuarioRepository repository;
  @Autowired UsuarioService usuarioService;
+ @Autowired GamificacaoService gamificacaoService;
  @Autowired AuthService authService;
  @Autowired PasswordEncoder encoder;
  @Autowired JdbcTemplate jdbc;
@@ -39,7 +44,7 @@ class UsuarioFlowTests {
  MockMvc mvc;
  @BeforeEach void preparar(){
   mvc=MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
-  for(String table:new String[]{"sync_request","email_verification","tarefa","avaliacao","falta","disciplina","periodo_letivo","progresso_estudante","usuario"})jdbc.update("DELETE FROM "+table);
+  for(String table:new String[]{"sync_request","email_verification","tarefa","avaliacao","falta","disciplina","periodo_letivo","usuario"})jdbc.update("DELETE FROM "+table);
   reset(mail);
  }
  @Test void cadastroSoCriaContaDepoisDeConfirmarEmailEMantemHashEProgresso()throws Exception{
@@ -53,7 +58,24 @@ class UsuarioFlowTests {
   Usuario saved=repository.findByEmailIgnoreCase("ana@example.com").orElseThrow();
   assertEquals("Ana",saved.getNome());assertNotNull(saved.getDataCriacao());assertNotEquals("segredo123",saved.getSenha());
   assertTrue(encoder.matches("segredo123",saved.getSenha()));
-  assertEquals(1,jdbc.queryForObject("SELECT nivel FROM progresso_estudante WHERE id_usuario=?",Integer.class,saved.getIdUsuario()));
+  var securityContext = SecurityContextHolder.createEmptyContext();
+  securityContext.setAuthentication(
+      new UsernamePasswordAuthenticationToken(
+          saved.getIdUsuario().toString(),
+          null,
+          List.of()
+      )
+  );
+
+  SecurityContextHolder.setContext(securityContext);
+
+  try {
+      var progresso = gamificacaoService.consultar(saved.getIdUsuario());
+      assertEquals(0, progresso.xpTotal());
+      assertEquals(1, progresso.nivel());
+  } finally {
+      SecurityContextHolder.clearContext();
+  }
   mvc.perform(post("/api/auth/login").contentType("application/json")
    .content("{\"email\":\"ANA@example.com\",\"senha\":\"segredo123\"}")).andExpect(status().isOk()).andExpect(jsonPath("$.senha").doesNotExist());
   mvc.perform(post("/api/auth/login").contentType("application/json")
@@ -82,15 +104,23 @@ class UsuarioFlowTests {
   for(int id:new int[]{0,2147483647})mvc.perform(put("/api/usuarios/"+id).with(jwt().jwt(j->j.subject(a.getIdUsuario().toString())))
    .contentType("application/json").content("{\"nome\":\"Ana\",\"email\":\"novo@example.com\"}")).andExpect(status().isForbidden());
  }
- @Test void rollbackDesfazUsuarioEProgressoJuntos(){
-  String email=UUID.randomUUID()+"@example.com";
-  assertThrows(IllegalStateException.class,()->new TransactionTemplate(transactionManager).execute(status->{
-   UsuarioResponse user=cadastrar(email);
-   assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM progresso_estudante WHERE id_usuario=?",Integer.class,user.getIdUsuario()));
-   throw new IllegalStateException("Falha simulada");
-  }));
-  assertFalse(repository.existsByEmailIgnoreCase(email));assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM progresso_estudante",Integer.class));
- }
+  @Test
+  void rollbackDesfazCadastroUsuario() {
+      String email = UUID.randomUUID() + "@example.com";
+
+      assertThrows(IllegalStateException.class, () ->
+          new TransactionTemplate(transactionManager).execute(status -> {
+              UsuarioResponse user = cadastrar(email);
+
+              assertTrue(repository.existsById(user.getIdUsuario()));
+
+              throw new IllegalStateException("Falha simulada");
+          })
+      );
+
+      assertFalse(repository.existsByEmailIgnoreCase(email));
+      assertEquals(0, repository.count());
+  }
  @Test void rejeitaDadosInvalidosESenhaUtf8Longa()throws Exception{
   mvc.perform(post("/api/auth/register").contentType("application/json")
    .content("{\"nome\":\"Ana\",\"email\":\"invalido\",\"senha\":\"123\"}")).andExpect(status().isBadRequest());

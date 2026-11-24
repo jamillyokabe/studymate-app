@@ -9,14 +9,7 @@ CREATE TABLE usuario (
  instituicao VARCHAR(100)
 );
 CREATE SEQUENCE seq_usuario START WITH 1 INCREMENT BY 1;
-CREATE TABLE progresso_estudante (
- id_usuario INTEGER PRIMARY KEY REFERENCES usuario(id_usuario),
- xp_total INTEGER NOT NULL,
- nivel INTEGER NOT NULL,
- sequencia_atual INTEGER NOT NULL,
- maior_sequencia INTEGER NOT NULL,
- data_ultimo_dia_sequencia DATE
-);
+
 CREATE TABLE periodo_letivo (
  id_periodo INTEGER PRIMARY KEY,
  id_usuario INTEGER NOT NULL REFERENCES usuario(id_usuario),

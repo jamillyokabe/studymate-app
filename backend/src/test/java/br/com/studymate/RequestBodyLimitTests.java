@@ -2,7 +2,6 @@ package br.com.studymate;
 import br.com.studymate.config.RequestBodyLimitFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.*;
-import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;

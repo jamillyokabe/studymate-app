@@ -8,15 +8,9 @@ CREATE TABLE IF NOT EXISTS usuario (
  matricula VARCHAR(50),
  instituicao VARCHAR(100)
 );
+
 CREATE SEQUENCE IF NOT EXISTS seq_usuario START WITH 1 INCREMENT BY 1;
-CREATE TABLE IF NOT EXISTS progresso_estudante (
- id_usuario INTEGER PRIMARY KEY REFERENCES usuario(id_usuario),
- xp_total INTEGER NOT NULL,
- nivel INTEGER NOT NULL,
- sequencia_atual INTEGER NOT NULL,
- maior_sequencia INTEGER NOT NULL,
- data_ultimo_dia_sequencia DATE
-);
+
 CREATE TABLE IF NOT EXISTS periodo_letivo (
  id_periodo INTEGER PRIMARY KEY,
  id_usuario INTEGER NOT NULL REFERENCES usuario(id_usuario),

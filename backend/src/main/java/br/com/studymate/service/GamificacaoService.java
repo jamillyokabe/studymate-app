@@ -61,15 +61,15 @@ public class GamificacaoService {
         // Keep every projection in the same snapshot as the serialized reward writes.
         bloquear(idUsuario);
         LocalDate hoje = hoje();
-        var progresso = repository.progresso(idUsuario);
+        int xp = repository.xpTotal(idUsuario);
         var dias = repository.dias(idUsuario);
         var contagem = repository.contagem(idUsuario);
         var sequencia = sequencia(dias, hoje);
-        int melhor = Math.max(progresso.melhorOfensiva(), sequencia.melhor());
+        int melhor = sequencia.melhor();
         var desbloqueadas = repository.medalhas(idUsuario);
         List<Medalha> medalhas = new ArrayList<>();
         for (Objetivo objetivo : OBJETIVOS) {
-            int valor = valor(objetivo, progresso.xpTotal(), contagem, melhor);
+            int valor = valor(objetivo, xp, contagem, melhor);
             medalhas.add(new Medalha(objetivo.codigo(), objetivo.nome(), objetivo.descricao(),
                     objetivo.icone(), objetivo.categoria(), objetivo.meta(), Math.min(valor, objetivo.meta()),
                     desbloqueadas.containsKey(objetivo.codigo()), desbloqueadas.get(objetivo.codigo())));
@@ -79,7 +79,6 @@ public class GamificacaoService {
             LocalDate dia = hoje.minusDays(i);
             semana.add(new Dia(dia, dias.containsKey(dia), dias.getOrDefault(dia, 0)));
         }
-        int xp = progresso.xpTotal();
         return new GamificacaoResponse(xp, xp / 100 + 1, xp % 100, 100 - xp % 100,
                 sequencia.atual(), melhor, dias.containsKey(hoje), dias.getOrDefault(hoje, 0),
                 META_DIARIA, contagem.tarefas(), contagem.presencas(), dias.size(),
@@ -114,19 +113,25 @@ public class GamificacaoService {
         usuarios.buscarParaAtualizacao(usuario).orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado."));
     }
 
-    private void registrar(Integer usuario, String tipo, Integer origem, String descricao, int xp, OffsetDateTime instante) {
+    private void registrar(Integer usuario, String tipo, Integer origem,
+            String descricao, int xp, OffsetDateTime instante) {
+
         LocalDate dia = instante.toLocalDate();
-        var anterior = repository.progresso(usuario);
+
         repository.registrar(usuario, tipo, origem, descricao, xp, dia, instante);
-        int total = Math.addExact(anterior.xpTotal(), xp);
+
+        int total = repository.xpTotal(usuario);
+
         var dias = repository.dias(usuario);
         var sequencia = sequencia(dias, dia);
-        int melhor = Math.max(anterior.melhorOfensiva(), sequencia.melhor());
-        repository.atualizar(usuario, total, sequencia.atual(), melhor, sequencia.ultimo());
+        int melhor = sequencia.melhor();
+
         var contagem = repository.contagem(usuario);
         var desbloqueadas = repository.medalhas(usuario);
+
         for (Objetivo objetivo : OBJETIVOS) {
-            if (!desbloqueadas.containsKey(objetivo.codigo()) && valor(objetivo, total, contagem, melhor) >= objetivo.meta()) {
+            if (!desbloqueadas.containsKey(objetivo.codigo())
+                    && valor(objetivo, total, contagem, melhor) >= objetivo.meta()) {
                 repository.desbloquear(usuario, objetivo.codigo(), instante);
             }
         }

@@ -70,7 +70,7 @@ class TaskSecurityTests {
     @BeforeEach
     void preparar() {
         for (String tabela : new String[]{"sync_request","email_verification", "tarefa", "avaliacao", "falta", "disciplina",
-                "periodo_letivo", "progresso_estudante", "usuario"}) {
+                "periodo_letivo", "usuario"}) {
             jdbc.update("DELETE FROM " + tabela);
         }
         usuario = criarUsuario("task-ana@example.com");

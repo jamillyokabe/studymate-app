@@ -67,7 +67,6 @@ class LocalGamificacaoMigrationTests {
             jdbc = abrir(url);
         }
         jdbc.update("INSERT INTO usuario (id_usuario,nome,email,senha_hash,data_criacao) VALUES (1,'Teste de migração','migration@example.com','hash-local',CURRENT_TIMESTAMP)");
-        jdbc.update("INSERT INTO progresso_estudante (id_usuario,xp_total,nivel,sequencia_atual,maior_sequencia) VALUES (1,120,2,1,3)");
         inserirOperacao(jdbc, "CREATE");
         inserirAtividade(jdbc, "TAREFA");
         jdbc.execute("SHUTDOWN");
@@ -78,7 +77,13 @@ class LocalGamificacaoMigrationTests {
             new LocalGamificacaoMigration().localSyncOperationMigration(jdbc).run(null);
             new LocalGamificacaoMigration().localSyncOperationMigration(jdbc).run(null);
             assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM usuario", Integer.class));
-            assertEquals(120, jdbc.queryForObject("SELECT xp_total FROM progresso_estudante WHERE id_usuario=1", Integer.class));
+            assertEquals(
+                20 * (1 + startup * 2),
+                jdbc.queryForObject(
+                    "SELECT COALESCE(SUM(xp), 0) FROM atividade_gamificacao WHERE id_usuario=1",
+                    Integer.class
+                )
+            );
             assertEquals(1 + startup * 2, jdbc.queryForObject("SELECT COUNT(*) FROM sync_request", Integer.class));
             assertEquals(1 + startup * 2, jdbc.queryForObject("SELECT COUNT(*) FROM atividade_gamificacao", Integer.class));
             inserirOperacao(jdbc, "COMPLETE");
@@ -95,7 +100,13 @@ class LocalGamificacaoMigrationTests {
         jdbc = abrir(url);
         assertEquals(7, jdbc.queryForObject("SELECT COUNT(*) FROM sync_request", Integer.class));
         assertEquals(7, jdbc.queryForObject("SELECT COUNT(*) FROM atividade_gamificacao", Integer.class));
-        assertEquals(120, jdbc.queryForObject("SELECT xp_total FROM progresso_estudante WHERE id_usuario=1", Integer.class));
+        assertEquals(
+            140,
+            jdbc.queryForObject(
+                "SELECT COALESCE(SUM(xp), 0) FROM atividade_gamificacao WHERE id_usuario=1",
+                Integer.class
+            )
+        );
         // Verify the persisted constraint before running another migration, not just in-memory DDL.
         inserirOperacao(jdbc, "COMPLETE");
         inserirOperacao(jdbc, "REOPEN");

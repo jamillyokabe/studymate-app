@@ -17,13 +17,14 @@ public class GamificacaoRepository {
 
     public GamificacaoRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
-    public record Progresso(int xpTotal, int melhorOfensiva) {}
     public record Contagem(int tarefas, int presencas) {}
 
-    public Progresso progresso(Integer usuario) {
-        return jdbc.query("SELECT xp_total,maior_sequencia FROM progresso_estudante WHERE id_usuario=?",
-                (rs, row) -> new Progresso(rs.getInt(1), rs.getInt(2)), usuario)
-                .stream().findFirst().orElse(new Progresso(0, 0));
+    public int xpTotal(Integer usuario) {
+        return jdbc.queryForObject("""
+                SELECT COALESCE(SUM(xp), 0)
+                FROM atividade_gamificacao
+                WHERE id_usuario=?
+                """, Integer.class, usuario);
     }
 
     public boolean possuiPremioTarefa(Integer usuario, Integer tarefa) {
@@ -78,21 +79,5 @@ public class GamificacaoRepository {
     public void desbloquear(Integer usuario, String codigo, OffsetDateTime instante) {
         jdbc.update("INSERT INTO medalha_estudante (id_usuario,codigo,desbloqueada_em) VALUES (?,?,?)",
                 usuario, codigo, instante);
-    }
-
-    public void atualizar(Integer usuario, int xp, int sequencia, int melhor, LocalDate ultimo) {
-        int alteradas = jdbc.update("""
-                UPDATE progresso_estudante SET xp_total=?,nivel=?,sequencia_atual=?,
-                    maior_sequencia=?,data_ultimo_dia_sequencia=? WHERE id_usuario=?
-                """, xp, xp / 100 + 1, sequencia, melhor,
-                ultimo == null ? null : Date.valueOf(ultimo), usuario);
-        if (alteradas == 0) {
-            jdbc.update("""
-                    INSERT INTO progresso_estudante
-                    (id_usuario,xp_total,nivel,sequencia_atual,maior_sequencia,data_ultimo_dia_sequencia)
-                    VALUES (?,?,?,?,?,?)
-                    """, usuario, xp, xp / 100 + 1, sequencia, melhor,
-                    ultimo == null ? null : Date.valueOf(ultimo));
-        }
     }
 }

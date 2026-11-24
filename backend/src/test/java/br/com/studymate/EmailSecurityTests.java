@@ -14,14 +14,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.*;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.mockito.ArgumentCaptor;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.sql.Timestamp;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -44,7 +44,7 @@ class EmailSecurityTests {
  MockMvc mvc;
  @BeforeEach void setup(){
   mvc=MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
-  for(String table:new String[]{"sync_request","email_verification","tarefa","avaliacao","falta","disciplina","periodo_letivo","progresso_estudante","usuario"})jdbc.update("DELETE FROM "+table);
+  for(String table:new String[]{"sync_request","email_verification","tarefa","avaliacao","falta","disciplina","periodo_letivo","usuario"})jdbc.update("DELETE FROM "+table);
   jdbc.update("DELETE FROM auth_rate_limit_bucket WHERE bucket_key NOT LIKE '%:GLOBAL'");
   jdbc.update("UPDATE auth_rate_limit_bucket SET attempts=0,window_end=TIMESTAMP WITH TIME ZONE '1970-01-01 00:00:00+00:00'");
   reset(mail);

@@ -36,7 +36,7 @@ class NotificacaoEdgeTests {
     @BeforeEach void preparar() {
         clock.set("2026-10-10T15:00:00Z");
         for (String table : List.of("notificacao","sync_request","email_verification","atividade_gamificacao","medalha_estudante",
-                "presenca_aula","tarefa","avaliacao","falta","disciplina","periodo_letivo","progresso_estudante","usuario")) {
+                "presenca_aula","tarefa","avaliacao","falta","disciplina","periodo_letivo","usuario")) {
             jdbc.update("DELETE FROM " + table);
         }
         conta(1);

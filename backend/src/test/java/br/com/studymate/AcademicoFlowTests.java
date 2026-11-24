@@ -48,7 +48,6 @@ class AcademicoFlowTests {
         jdbc.update("DELETE FROM falta");
         jdbc.update("DELETE FROM disciplina");
         jdbc.update("DELETE FROM periodo_letivo");
-        jdbc.update("DELETE FROM progresso_estudante");
         jdbc.update("DELETE FROM usuario");
         usuario = criarUsuario("ana@example.com");
         outro = criarUsuario("bia@example.com");

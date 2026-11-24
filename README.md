@@ -191,6 +191,29 @@ Não são necessários scripts `.cmd` ou `.ps1` específicos para iniciar ou enc
 
 ---
 
+# Ambiente de produção
+
+O backend do StudyMate é implantado utilizando Docker Compose e Coolify.
+
+A infraestrutura é composta por:
+
+- Backend Java com Spring Boot;
+- Oracle Database XE 21c;
+- Volume persistente para armazenamento dos dados;
+- Proxy reverso com HTTPS gerenciado pelo Coolify.
+
+A URL da API em produção é:
+
+`https://studymate.jshelpful.com.br/api`
+
+O banco Oracle permanece acessível apenas pela rede interna dos containers, sem exposição pública da porta 1521.
+
+O aplicativo mobile utiliza a variável `EXPO_PUBLIC_API_URL` para definir o endereço da API.
+
+As credenciais do banco de dados, o segredo JWT e as configurações de SMTP são definidos por variáveis de ambiente e não devem ser versionados no repositório.
+
+---
+
 # Banco de dados
 
 ## Oracle
@@ -215,6 +238,8 @@ O script principal também executa as migrations:
 003_auth_protection.sql
 004_email_verification.sql
 005_gamificacao.sql
+006_notificacoes.sql
+007_presenca_quantidade_aulas.sql
 ```
 
 Mais informações:
@@ -297,6 +322,10 @@ ATIVIDADE_GAMIFICACAO
 MEDALHA_ESTUDANTE
 PRESENCA_AULA
 ```
+
+O XP total, o nível e as ofensivas são calculados a partir
+do histórico de atividades registrado em ATIVIDADE_GAMIFICACAO.
+As medalhas desbloqueadas são persistidas em MEDALHA_ESTUDANTE.
 
 O histórico de gamificação é preservado mesmo quando determinadas entidades acadêmicas são posteriormente removidas.
 

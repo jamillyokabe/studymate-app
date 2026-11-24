@@ -66,7 +66,7 @@ class NotificacaoFlowTests {
         clock.set("2026-10-10T15:00:00Z");
         for (String table : List.of("notificacao", "sync_request", "email_verification", "atividade_gamificacao",
                 "medalha_estudante", "presenca_aula", "tarefa", "avaliacao", "falta", "disciplina",
-                "periodo_letivo", "progresso_estudante", "usuario")) jdbc.update("DELETE FROM " + table);
+                "periodo_letivo", "usuario")) jdbc.update("DELETE FROM " + table);
         usuario = usuario("notificacao-ana@example.com");
         outro = usuario("notificacao-bia@example.com");
         disciplina = disciplina(usuario); disciplinaOutro = disciplina(outro);
