@@ -19,6 +19,17 @@
       "android": {
         "buildType": "app-bundle"
       }
+    },
+    "production-apk": {
+      "distribution": "internal",
+      "environment": "production",
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://study-mate.jshelpful.com.br/api"
+      },
+      "android": {
+        "buildType": "apk"
+      }
     }
   },
   "submit": {
